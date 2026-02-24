@@ -9,19 +9,6 @@
 using namespace std::chrono_literals;
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
-/*
- * TODO: Create a Class named 'LifecycleSensor' that inherits from rclcpp_lifecycle::LifecycleNode.
- * Requirements:
- * 1. The constructor should name the node "lifecycle_sensor".
- * 2. Implement lifecycle callbacks:
- *    - on_configure: Initialize publisher, log "Sensor configured"
- *    - on_activate: Start timer (500ms), log "Sensor activated"
- *    - on_deactivate: Stop timer, log "Sensor deactivated"
- *    - on_cleanup: Reset publisher, log "Sensor cleaned up"
- *    - on_shutdown: Log "Sensor shutting down"
- * 3. Timer should publish random values (0-100) to "/sensor_data"
- */
-
 class LifecycleSensor : public rclcpp_lifecycle::LifecycleNode
 {
 public:
@@ -33,20 +20,53 @@ public:
         RCLCPP_INFO(this->get_logger(), "Lifecycle sensor node created");
     }
 
-    // TODO: Implement on_configure callback
-    // CallbackReturn on_configure(const rclcpp_lifecycle::State &)
+    // 1. Configure: Setup the publisher
+    CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
+    {
+        publisher_ = this->create_publisher<std_msgs::msg::Float64>("/sensor_data", 10);
+        RCLCPP_INFO(this->get_logger(), "Sensor configured");
+        return CallbackReturn::SUCCESS;
+    }
 
-    // TODO: Implement on_activate callback
-    // CallbackReturn on_activate(const rclcpp_lifecycle::State &)
+    // 2. Activate: Start timer and enable publisher
+    CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
+    {
+        // Explicitly activate the publisher to allow data flow
+        publisher_->on_activate();
+        
+        timer_ = this->create_wall_timer(
+            500ms, std::bind(&LifecycleSensor::timer_callback, this));
 
-    // TODO: Implement on_deactivate callback
-    // CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
+        RCLCPP_INFO(this->get_logger(), "Sensor activated");
+        return CallbackReturn::SUCCESS;
+    }
 
-    // TODO: Implement on_cleanup callback
-    // CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
+    // 3. Deactivate: Stop the timer and disable publisher
+    CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override
+    {
+        timer_->cancel();
+        publisher_->on_deactivate();
 
-    // TODO: Implement on_shutdown callback
-    // CallbackReturn on_shutdown(const rclcpp_lifecycle::State &)
+        RCLCPP_INFO(this->get_logger(), "Sensor deactivated");
+        return CallbackReturn::SUCCESS;
+    }
+
+    // 4. Cleanup: Destroy resources
+    CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override
+    {
+        timer_.reset();
+        publisher_.reset();
+
+        RCLCPP_INFO(this->get_logger(), "Sensor cleaned up");
+        return CallbackReturn::SUCCESS;
+    }
+
+    // 5. Shutdown: Final cleanup
+    CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override
+    {
+        RCLCPP_INFO(this->get_logger(), "Sensor shutting down from state: %s", state.label().c_str());
+        return CallbackReturn::SUCCESS;
+    }
 
 private:
     void timer_callback()
@@ -57,7 +77,8 @@ private:
         publisher_->publish(msg);
     }
 
-    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr publisher_;
+    // Use LifecyclePublisher instead of standard Publisher
+    rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float64>::SharedPtr publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
 
     std::random_device rd_;
@@ -69,9 +90,11 @@ int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<LifecycleSensor>();
+    
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(node->get_node_base_interface());
     executor.spin();
+    
     rclcpp::shutdown();
     return 0;
 }
