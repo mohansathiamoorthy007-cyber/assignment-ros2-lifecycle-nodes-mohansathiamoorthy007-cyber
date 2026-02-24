@@ -1,24 +1,15 @@
-cmake_minimum_required(VERSION 3.8)
-project(ros2_lifecycle)
+# Add the executable target
+add_executable(lifecycle_sensor src/lifecycle_sensor.cpp)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
+# Link ROS2 dependencies
+ament_target_dependencies(lifecycle_sensor 
+  rclcpp 
+  rclcpp_lifecycle 
+  std_msgs
+)
 
-# find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(std_msgs REQUIRED)
-
-# TODO: Add the executable target named 'lifecycle_sensor'
-# 1. Add executable using src/lifecycle_sensor.cpp
-# 2. Add dependencies (ament_target_dependencies) for rclcpp, rclcpp_lifecycle, std_msgs
-# 3. Install the target to the DESTINATION lib/${PROJECT_NAME}
-
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-endif()
-
-ament_package()
+# Install the target so it's accessible after sourcing
+install(TARGETS
+  lifecycle_sensor
+  DESTINATION lib/${PROJECT_NAME}
+)
