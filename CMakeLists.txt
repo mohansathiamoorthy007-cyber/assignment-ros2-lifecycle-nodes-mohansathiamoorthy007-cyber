@@ -7,7 +7,6 @@ ament_target_dependencies(lifecycle_sensor
   rclcpp_lifecycle
   std_msgs
 )
-
 # 3. Install the target to the DESTINATION lib/${PROJECT_NAME}
 install(TARGETS
   lifecycle_sensor
