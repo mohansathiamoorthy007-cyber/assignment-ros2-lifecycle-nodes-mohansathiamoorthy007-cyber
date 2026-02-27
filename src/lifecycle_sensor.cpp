@@ -9,7 +9,7 @@ public:
         RCLCPP_INFO(this->get_logger(), "Lifecycle sensor node created");
     }
 
-    // 1. Initialize publisher
+    // 1. Initialize publishe
     CallbackReturn on_configure(const rclcpp_lifecycle::State &)
     {
         publisher_ = this->create_publisher<std_msgs::msg::Float64>("/sensor_data", 10);
